@@ -4,6 +4,13 @@ import mongoose from 'mongoose';
 import dotenv from 'dotenv';
 import userRoutes from './routes/users.js';
 import curriculumRoutes from './routes/curriculum.js';
+import parseRoutes from './routes/parse.js';
+import teachingRoutes from './routes/teaching.js';
+import attemptsRoutes from './routes/attempts.js';
+import revisionRoutes from './routes/revision.js';
+import chatRoutes from './routes/chat.js';
+import cameraRoutes from './routes/camera.js';
+import voiceRoutes from './routes/voice.js';
 
 dotenv.config();
 
@@ -20,6 +27,13 @@ mongoose.connect(MONGODB_URI)
 
 app.use('/api', userRoutes);
 app.use('/api', curriculumRoutes);
+app.use('/api', parseRoutes);
+app.use('/api', teachingRoutes);
+app.use('/api', attemptsRoutes);
+app.use('/api', revisionRoutes);
+app.use('/api', chatRoutes);
+app.use('/api', cameraRoutes);
+app.use('/api', voiceRoutes);
 
 // Fallback route to match original Python check route
 app.get('/', (req, res) => {
