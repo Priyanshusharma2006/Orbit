@@ -22,9 +22,7 @@ For the full story behind Orbit, including our inspiration, challenges, and futu
 -   **🗣️ Voice-First Accessibility**: Full navigation and interaction via voice for visually impaired users.
 -   **🔁 Smart Revision**: Targeted revision sessions based on your "lagging" topics.
 
-## 🛠️ Tech Stack (MERN)
-
-This project is built using the **MERN Stack** (MongoDB, Express, React, Node.js) along with other modern technologies.
+## 🛠️ Tech Stack
 
 ### **Frontend**
 ![React](https://img.shields.io/badge/React-20232A?style=for-the-badge&logo=react&logoColor=61DAFB)
@@ -50,8 +48,6 @@ This project is built using the **MERN Stack** (MongoDB, Express, React, Node.js
 ### Prerequisites
 *   Node.js (v18+)
 *   MongoDB Instance (Local or Atlas)
-*   A Clerk account (for authentication)
-*   A Google Gemini API Key
 
 ### Installation
 
@@ -61,33 +57,21 @@ This project is built using the **MERN Stack** (MongoDB, Express, React, Node.js
     cd Orbit
     ```
 
-2.  **Environment Setup**
-    *   **Frontend**: Create a `.env` file in the `frontend/` directory with your Clerk publishable key.
-        ```env
-        VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
-        ```
-    *   **Backend**: Create a `.env` file in the `backend/` directory with your MongoDB connection string and Gemini API key. *(Note: If using local MongoDB, use `127.0.0.1` instead of `localhost` to avoid Node.js IPv6 resolution timeouts).*
-        ```env
-        MONGODB_URI=mongodb://127.0.0.1:27017/orbit
-        GEMINI_API_KEY=your_gemini_key_here
-        ```
-
-3.  **Setup Backend**
+2.  **Setup Backend**
     ```sh
     cd backend
     npm install
-    npm run dev
     ```
-    *The backend server will run on `http://localhost:8000`.*
 
-4.  **Setup Frontend**
-    Open a new terminal window:
+3.  **Setup Frontend**
     ```sh
     cd frontend
     npm install
-    npm run dev
     ```
-    *The frontend will run on `http://localhost:8080` (or whichever port Vite assigns).*
+
+4.  **Run Development Servers**
+    *   Backend: `cd backend && npm run dev`
+    *   Frontend: `cd frontend && npm run dev`
 
 ---
 

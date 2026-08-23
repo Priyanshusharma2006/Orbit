@@ -25,17 +25,31 @@ router.post('/parse', upload.array('files'), async (req, res) => {
     for (const file of req.files) {
       // officeparser requires the file extension to know how to parse it
       // multer saves without extension, so we rename it temporarily
-      const originalExtension = file.originalname.split('.').pop();
+      const originalExtension = file.originalname.split('.').pop().toLowerCase();
       const tempFilePath = `${file.path}.${originalExtension}`;
       
       try {
+        if (originalExtension === 'ppt') {
+          // Clean up files before returning
+          if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
+          if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+          return res.status(400).json({ detail: "Legacy .ppt files are not supported. Please convert your file to .pptx or .pdf before uploading." });
+        }
+
         fs.renameSync(file.path, tempFilePath);
-        const text = await parseOffice(tempFilePath);
+        
+        const parsedData = await parseOffice(tempFilePath);
+        const text = typeof parsedData === 'string' ? parsedData : (parsedData.toText ? parsedData.toText() : String(parsedData));
         extractedText += text + '\n\n';
       } catch (err) {
         console.error("Error parsing file:", err);
+        // Clean up files before returning
+        if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
+        
+        return res.status(400).json({ detail: `Error parsing ${file.originalname}: ${err.message || 'Unknown error'}` });
       } finally {
-        // Clean up uploaded file
+        // Clean up uploaded file if it still exists
         if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
         if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
       }

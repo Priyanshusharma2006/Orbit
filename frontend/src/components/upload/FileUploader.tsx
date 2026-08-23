@@ -24,7 +24,7 @@ const fileTypeConfig = {
 };
 
 interface FileUploaderProps {
-  onUploadComplete: () => void;
+  onUploadComplete: (curriculumId?: string) => void;
 }
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000';
@@ -170,11 +170,17 @@ export function FileUploader({ onUploadComplete }: FileUploaderProps) {
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        throw new Error(`Failed to parse files: ${errorText}`);
+        let errorData;
+        try {
+          errorData = await response.json();
+        } catch (e) {
+          errorData = { detail: 'Unknown error occurred during upload' };
+        }
+        throw new Error(errorData.detail || 'Failed to parse files');
       }
 
-      await response.json();
+      const responseData = await response.json();
+      const newCurriculumId = responseData.curriculum_id;
 
       setFiles(prev => prev.map(f => ({ ...f, status: 'ready' as const })));
 
@@ -182,9 +188,9 @@ export function FileUploader({ onUploadComplete }: FileUploaderProps) {
       setProgress(100);
 
       setTimeout(() => {
-        onUploadComplete();
+        onUploadComplete(newCurriculumId);
       }, 800);
-    } catch (err) {
+    } catch (err: any) {
       console.error('Error uploading files:', err);
       clearInterval(progressInterval);
       setFiles(prev => prev.map(f =>
@@ -194,7 +200,7 @@ export function FileUploader({ onUploadComplete }: FileUploaderProps) {
       ));
       setIsProcessing(false);
       setProgress(0);
-      setError('Failed to upload files. Please check your connection and try again.');
+      setError(err.message || 'Failed to upload files. Please try again.');
     }
   };
 

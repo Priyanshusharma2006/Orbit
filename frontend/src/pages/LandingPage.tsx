@@ -110,8 +110,12 @@ export default function LandingPage() {
     };
   }, []);
 
-  const handleFilesReady = () => {
-    navigate('/curriculum');
+  const handleFilesReady = (curriculumId?: string) => {
+    if (curriculumId) {
+      navigate(`/curriculum?id=${curriculumId}`);
+    } else {
+      navigate('/curriculum');
+    }
   };
 
   return (
