@@ -9,7 +9,7 @@ import { generateContent, generateStructuredContent } from '../services/gemini_s
 const router = express.Router();
 const upload = multer({ dest: 'uploads/' });
 
-import officeParser from 'officeparser';
+import { parseOffice } from 'officeparser';
 import fs from 'fs';
 import { curriculumSchema } from '../services/gemini_service.js';
 
@@ -24,7 +24,7 @@ router.post('/parse', upload.array('files'), async (req, res) => {
     let extractedText = '';
     for (const file of req.files) {
       try {
-        const text = await officeParser.parseOfficeAsync(file.path);
+        const text = await parseOffice(file.path);
         extractedText += text + '\n\n';
       } catch (err) {
         console.error("Error parsing file:", err);
