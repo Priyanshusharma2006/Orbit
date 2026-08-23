@@ -5,10 +5,13 @@ import Subtopic from '../models/Subtopic.js';
 
 const router = express.Router();
 
-router.get('/curriculums/:user_id', async (req, res) => {
+router.get('/curriculums', async (req, res) => {
   try {
-    const curriculums = await Curriculum.find({ user_id: req.params.user_id }).sort({ created_at: -1 });
-    res.json(curriculums);
+    const userId = req.query.user_id;
+    if (!userId) return res.status(400).json({ detail: "Must provide user_id" });
+    
+    const curriculums = await Curriculum.find({ user_id: userId }).sort({ created_at: -1 });
+    res.json({ curriculums });
   } catch (error) {
     res.status(500).json({ detail: error.message });
   }
