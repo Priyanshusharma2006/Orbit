@@ -23,14 +23,22 @@ router.post('/parse', upload.array('files'), async (req, res) => {
 
     let extractedText = '';
     for (const file of req.files) {
+      // officeparser requires the file extension to know how to parse it
+      // multer saves without extension, so we rename it temporarily
+      const originalExtension = file.originalname.split('.').pop();
+      const tempFilePath = `${file.path}.${originalExtension}`;
+      
       try {
-        const text = await parseOffice(file.path);
+        fs.renameSync(file.path, tempFilePath);
+        const text = await parseOffice(tempFilePath);
         extractedText += text + '\n\n';
       } catch (err) {
         console.error("Error parsing file:", err);
+      } finally {
+        // Clean up uploaded file
+        if (fs.existsSync(tempFilePath)) fs.unlinkSync(tempFilePath);
+        if (fs.existsSync(file.path)) fs.unlinkSync(file.path);
       }
-      // Clean up uploaded file
-      fs.unlinkSync(file.path);
     }
 
     if (!extractedText.trim()) {
