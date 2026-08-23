@@ -36,38 +36,31 @@ For the full story behind Orbit, including our inspiration, challenges, and futu
 
 
 ### **Backend**
-![FastAPI](https://img.shields.io/badge/FastAPI-005571?style=for-the-badge&logo=fastapi)
-![Python](https://img.shields.io/badge/Python-3776AB?style=for-the-badge&logo=python&logoColor=white)
-![PostgreSQL](https://img.shields.io/badge/PostgreSQL-316192?style=for-the-badge&logo=postgresql&logoColor=white)
-*   **Server**: FastAPI (Uvicorn)
-*   **AI**: Google Gemini, Spacy, MediaPipe
-*   **TTS**: Piper (WASM)
-*   **DB**: Neon Tech (PostgreSQL)
-<img width="8192" height="2737" alt="Christmas Shopping Car Flow-2026-02-08-102637" src="https://github.com/user-attachments/assets/da82fc61-5e23-467c-9493-8245e3f1fe44" />
-<img width="3610" height="2780" alt="Christmas Shopping Car Flow-2026-02-08-102839" src="https://github.com/user-attachments/assets/0768f011-4a5b-44fe-99fd-b69f2fe7f65b" />
-<img width="5959" height="6961" alt="Untitled diagram-2026-02-08-103047" src="https://github.com/user-attachments/assets/c5c86237-28bf-4e02-b4bc-506c56630714" />
+![Node.js](https://img.shields.io/badge/Node.js-43853D?style=for-the-badge&logo=node.js&logoColor=white)
+![Express.js](https://img.shields.io/badge/Express.js-404D59?style=for-the-badge)
+![MongoDB](https://img.shields.io/badge/MongoDB-4EA94B?style=for-the-badge&logo=mongodb&logoColor=white)
+*   **Server**: Node.js & Express
+*   **AI**: Google Gemini (via `@google/genai`)
+*   **DB**: MongoDB (Mongoose)
 
 ## 🚀 Getting Started
 
 ### Prerequisites
 *   Node.js (v18+)
-*   Python (v3.10+)
-*   PostgreSQL Database
+*   MongoDB Instance (Local or Atlas)
 
 ### Installation
 
 1.  **Clone the repo**
     ```sh
-    git clone https://github.com/shivanshv45/Orbit.git
+    git clone https://github.com/Priyanshusharma2006/Orbit.git
     cd Orbit
     ```
 
 2.  **Setup Backend**
     ```sh
     cd backend
-    python -m venv venv
-    source venv/bin/activate  # or venv\Scripts\activate on Windows
-    pip install -r requirements.txt
+    npm install
     ```
 
 3.  **Setup Frontend**
@@ -77,8 +70,8 @@ For the full story behind Orbit, including our inspiration, challenges, and futu
     ```
 
 4.  **Run Development Servers**
-    *   Backend: `python run_server.py`
-    *   Frontend: `npm run dev`
+    *   Backend: `cd backend && npm run dev`
+    *   Frontend: `cd frontend && npm run dev`
 
 ---
 
