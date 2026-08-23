@@ -14,10 +14,21 @@ router.get('/curriculums/:user_id', async (req, res) => {
   }
 });
 
-router.get('/curriculum/:curriculum_id', async (req, res) => {
+router.get('/curriculum', async (req, res) => {
   try {
-    const curriculum = await Curriculum.findOne({ id: req.params.curriculum_id });
-    if (!curriculum) return res.status(404).json({ detail: "Not found" });
+    const { user_id, curriculum_id } = req.query;
+    
+    let curriculum;
+    if (curriculum_id) {
+      curriculum = await Curriculum.findOne({ id: curriculum_id });
+    } else if (user_id) {
+      // Get the most recent curriculum for the user
+      curriculum = await Curriculum.findOne({ user_id: user_id }).sort({ created_at: -1 });
+    } else {
+      return res.status(400).json({ detail: "Must provide user_id or curriculum_id" });
+    }
+    
+    if (!curriculum) return res.status(404).json({ detail: "Curriculum not found" });
     
     const modules = await Module.find({ curriculum_id: curriculum.id }).sort({ position: 1 });
     
