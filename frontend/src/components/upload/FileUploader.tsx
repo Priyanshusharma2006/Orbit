@@ -160,7 +160,7 @@ export function FileUploader({ onUploadComplete }: FileUploaderProps) {
         formData.append('files', fileObj.file);
       });
 
-      const response = await fetch(`${API_BASE_URL}/parse`, {
+      const response = await fetch(`${API_BASE_URL}/api/parse`, {
         method: 'POST',
         headers: {
           'X-User-Id': userSession.uid,
