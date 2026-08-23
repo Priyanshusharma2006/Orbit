@@ -1,0 +1,115 @@
+# Logs
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Editor directories and files
+.vscode/*
+!.vscode/extensions.json
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
+
+
+# =========================
+# Dependencies
+# =========================
+node_modules/
+**/node_modules/
+
+# =========================
+# Build outputs
+# =========================
+dist/
+dist-ssr/
+build/
+out/
+
+# =========================
+# Vite / React
+# =========================
+.vite/
+
+
+# =========================
+# Logs
+# =========================
+logs/
+
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# IDE / OS files
+# =========================
+.vscode/
+.idea/
+Thumbs.db
+
+
+# =========================
+# Python (for backend later)
+# =========================
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# =========================
+# Documentation (internal planning)
+# =========================
+README_TDT.md
+IMPLEMENTATION_PLAN.md
+FEATURE_ORDER.md
+DOCS_OVERVIEW.md
+
+# =========================
+# Misc
+# =========================
+coverage/
+.cache/
+
+#------------------------
+A
+PROGRESS.md
+N/
+
+# =========================
+# Database Fix Scripts & Temp Files
+# =========================
+run_attempts_fix.py
+run_db_fix.py
+fix_camera_table.sql
+
+*.sql
+
+
+
+
+# =========================
+# Text-to-Speech Data (Piper)
+# =========================
+backend/piper/
+backend/piper_models/
+backend/piper/espeak-ng-data/
+backend/tts_cache/
+*.onnx
+*.onnx.json

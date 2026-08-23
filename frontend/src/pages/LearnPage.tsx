@@ -1,0 +1,406 @@
+import { useState, useEffect } from 'react';
+import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
+import { motion, AnimatePresence } from 'framer-motion';
+import { Loader2, Video, VideoOff, Menu, X, ChevronDown, ChevronUp } from 'lucide-react';
+import { cn } from '@/lib/utils';
+import { CameraFeedback } from '@/components/teaching/CameraFeedback';
+import { TopicNavigator } from '@/components/layout/TopicNavigator';
+import { ProgressIndicator } from '@/components/layout/ProgressIndicator';
+import { TeachingCanvas } from '@/components/teaching/TeachingCanvas';
+import { useCurriculum } from '@/hooks/useCurriculum';
+import { useTeachingContent } from '@/hooks/useTeachingContent';
+import { useFaceTracking } from '@/hooks/useFaceTracking';
+import { createOrGetUser } from '@/logic/userSession';
+import { useQueryClient } from '@tanstack/react-query';
+import { api } from '@/lib/api';
+import type { Module, Subtopic } from '@/types/curriculum';
+import { useUser } from '@clerk/clerk-react';
+import { useAccessibilityModeOptional } from '@/context/AccessibilityModeContext';
+
+export default function LearnPage() {
+  const navigate = useNavigate();
+  const { subtopicId } = useParams<{ subtopicId: string }>();
+  const [currentSubtopicId, setCurrentSubtopicId] = useState(subtopicId || '');
+  const [progressPanelOpen, setProgressPanelOpen] = useState(false);
+  const [cameraEnabled, setCameraEnabled] = useState(false);
+  const [showMetricsPanel, setShowMetricsPanel] = useState(true);
+  const [sidebarOpen, setSidebarOpen] = useState(false);
+  const { user, isLoaded } = useUser();
+  const { uid } = createOrGetUser(user ? { id: user.id, fullName: user.fullName } : null, isLoaded);
+  const accessibility = useAccessibilityModeOptional();
+
+  const queryClient = useQueryClient();
+  const [searchParams] = useSearchParams();
+  const urlCurriculumId = searchParams.get('id') || undefined;
+  const [curriculumId, setCurriculumId] = useState(urlCurriculumId);
+
+  const { data: curriculumData, isLoading: curriculumLoading } = useCurriculum(curriculumId);
+  const { data: teachingData, isLoading: teachingLoading, error } = useTeachingContent(currentSubtopicId);
+
+  useEffect(() => {
+    if (urlCurriculumId) {
+      setCurriculumId(urlCurriculumId);
+    }
+  }, [urlCurriculumId]);
+
+  useEffect(() => {
+    if (teachingData?.curriculum_id && !urlCurriculumId) {
+      setCurriculumId(teachingData.curriculum_id);
+    }
+  }, [teachingData, urlCurriculumId]);
+
+
+  const { isActive: cameraActive, isLoading: cameraLoading, currentMetrics, error: cameraError } = useFaceTracking(currentSubtopicId, cameraEnabled);
+
+
+
+  const calculateStreak = () => {
+    try {
+      const stored = localStorage.getItem('orbit_streak_data');
+      const today = new Date().toISOString().split('T')[0];
+
+      if (!stored) {
+        localStorage.setItem('orbit_streak_data', JSON.stringify({ count: 1, lastDate: today }));
+        return 1;
+      }
+
+      const { count, lastDate } = JSON.parse(stored);
+
+      if (lastDate === today) return count;
+
+      const yesterday = new Date();
+      yesterday.setDate(yesterday.getDate() - 1);
+      const yesterdayStr = yesterday.toISOString().split('T')[0];
+
+      if (lastDate === yesterdayStr) {
+        const newCount = count + 1;
+        localStorage.setItem('orbit_streak_data', JSON.stringify({ count: newCount, lastDate: today }));
+        return newCount;
+      } else {
+
+        localStorage.setItem('orbit_streak_data', JSON.stringify({ count: 1, lastDate: today }));
+        return 1;
+      }
+    } catch (e) {
+      console.error("Streak calc error", e);
+      return 0;
+    }
+  };
+
+  const streak = calculateStreak();
+
+  // Stop voice when leaving the page
+  useEffect(() => {
+    return () => {
+      accessibility?.stop?.();
+    };
+  }, [accessibility]);
+
+  useEffect(() => {
+    if (subtopicId) {
+      setCurrentSubtopicId(subtopicId);
+    }
+  }, [subtopicId]);
+
+  // Find current module based on which module contains the current subtopic
+  const currentModule = curriculumData?.modules.find((m: Module) =>
+    m.subtopics.some((s: Subtopic) => s.id === currentSubtopicId)
+  ) || curriculumData?.modules[0];
+
+  // Get all subtopics for navigation
+  const allSubtopics: Subtopic[] = curriculumData?.modules.flatMap((m: Module) => m.subtopics) || [];
+  const currentIndex = allSubtopics.findIndex((s: Subtopic) => s.id === currentSubtopicId);
+  const nextSubtopic = currentIndex >= 0 && currentIndex < allSubtopics.length - 1
+    ? allSubtopics[currentIndex + 1]
+    : null;
+  const previousSubtopic = currentIndex > 0
+    ? allSubtopics[currentIndex - 1]
+    : null;
+
+  useEffect(() => {
+    if (!nextSubtopic?.id || !teachingData) return;
+
+    const delay = accessibility?.isOn ? 20000 : 3000;
+
+    const timer = setTimeout(() => {
+      queryClient.prefetchQuery({
+        queryKey: ['teaching', nextSubtopic.id],
+        queryFn: () => api.getTeachingContent(nextSubtopic.id, uid),
+        staleTime: Infinity,
+      });
+    }, delay);
+
+    return () => clearTimeout(timer);
+  }, [nextSubtopic, queryClient, uid, teachingData, accessibility?.isOn]);
+
+
+
+  const handleSelectSubtopic = (id: string) => {
+    setCurrentSubtopicId(id);
+    navigate(`/learn/${id}${curriculumId ? `?id=${curriculumId}` : ''}`, { replace: true });
+  };
+
+  const handleNext = () => {
+    // Invalidate curriculum query to update stats immediately
+    queryClient.invalidateQueries({ queryKey: ['curriculum'] });
+
+    if (nextSubtopic) {
+      handleSelectSubtopic(nextSubtopic.id);
+    } else {
+      navigate(curriculumId ? `/curriculum?id=${curriculumId}` : '/curriculum');
+    }
+  };
+
+  const handlePrevious = () => {
+    // Invalidate curriculum query to update stats immediately
+    queryClient.invalidateQueries({ queryKey: ['curriculum'] });
+
+    if (previousSubtopic) {
+      handleSelectSubtopic(previousSubtopic.id);
+    }
+  };
+
+  const handleBack = () => {
+    accessibility?.stop?.();
+    navigate(curriculumId ? `/curriculum?id=${curriculumId}` : '/curriculum');
+  };
+
+  // Keyboard Navigation
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (['INPUT', 'TEXTAREA'].includes(document.activeElement?.tagName || '')) return;
+
+      if (e.key === 'ArrowRight') {
+        handleNext();
+      } else if (e.key === 'ArrowLeft') {
+        handlePrevious();
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [nextSubtopic, previousSubtopic, navigate]); // Add simpler dependencies if possible, or assume handlers are stable if wrapped (they aren't wrapped in useCallback currently)
+
+
+
+
+  // Calculate some stats for progress panel
+  // Calculate some stats for progress panel
+  const completedSubtopicsFiltered = allSubtopics.filter((s: Subtopic) => s.status === 'completed');
+  const lessonsCompleted = completedSubtopicsFiltered.length;
+  const totalLessons = allSubtopics.length;
+
+  const avgPracticeScore = completedSubtopicsFiltered.length > 0
+    ? Math.round(completedSubtopicsFiltered.reduce((acc: number, curr: Subtopic) => acc + (curr.score || 0), 0) / completedSubtopicsFiltered.length)
+    : 0;
+
+  const remainingLessons = totalLessons - lessonsCompleted;
+  const estimatedMinutes = remainingLessons * 15;
+  const estimatedHours = Math.floor(estimatedMinutes / 60);
+  const estimatedMins = estimatedMinutes % 60;
+  const estimatedTimeLeft = estimatedHours > 0 ? `${estimatedHours}h ${estimatedMins}m` : `${estimatedMins}m`;
+
+  const nextMilestoneTitle = allSubtopics.find((s: Subtopic) => s.status !== 'completed')?.title || "All Complete!";
+
+  if (curriculumLoading) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center">
+          <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+          <p className="text-foreground text-lg font-medium">Loading curriculum...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!currentModule || !currentSubtopicId) {
+    return (
+      <div className="min-h-screen bg-background flex items-center justify-center">
+        <div className="text-center max-w-md">
+          <p className="text-foreground text-lg font-medium mb-2">No content available</p>
+          <button
+            onClick={handleBack}
+            className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+          >
+            Back to Curriculum
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen h-screen bg-background flex overflow-hidden">
+      {/* Mobile Sidebar Toggle */}
+      <button
+        onClick={() => setSidebarOpen(!sidebarOpen)}
+        className="md:hidden fixed top-4 left-4 z-50 p-2 rounded-xl bg-background border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200 shadow-sm hover:shadow-md"
+        aria-label={sidebarOpen ? "Close sidebar" : "Open sidebar"}
+      >
+        {sidebarOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+      </button>
+
+      {/* Mobile Overlay */}
+      <AnimatePresence>
+        {sidebarOpen && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="md:hidden fixed inset-0 bg-black/50 z-30"
+            onClick={() => setSidebarOpen(false)}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Left Sidebar - Topic Navigator */}
+      <div className={cn(
+        "fixed md:relative z-40 h-full transition-transform duration-300 ease-in-out",
+        "md:translate-x-0",
+        sidebarOpen ? "translate-x-0" : "-translate-x-full"
+      )}>
+        <TopicNavigator
+          module={currentModule}
+          currentSubtopicId={currentSubtopicId}
+          onSelectSubtopic={(id) => {
+            handleSelectSubtopic(id);
+            setSidebarOpen(false);
+          }}
+          onBack={handleBack}
+        />
+      </div>
+
+      {/* Main Content */}
+      <main className="flex-1 overflow-y-auto relative w-full">
+        {/* Camera & Voice Toggle - Fixed Below Sidebar Toggle */}
+        <div className="fixed top-4 md:top-16 right-4 z-40 flex flex-col items-end gap-2">
+          <button
+            onClick={() => setCameraEnabled(!cameraEnabled)}
+            className="p-2 rounded-xl bg-background border border-border hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200 shadow-sm hover:shadow-md"
+            title={cameraEnabled ? "Disable Focus Tracking" : "Enable Focus Tracking"}
+          >
+            {cameraEnabled ? (
+              <Video className="w-5 h-5 text-primary" />
+            ) : (
+              <VideoOff className="w-5 h-5" />
+            )}
+          </button>
+
+          {cameraEnabled && cameraActive && (
+            <button
+              onClick={() => setShowMetricsPanel(!showMetricsPanel)}
+              className="p-1.5 rounded-lg bg-background/80 border border-border/50 hover:bg-muted text-muted-foreground hover:text-foreground transition-all duration-200 shadow-sm"
+              title={showMetricsPanel ? "Hide Metrics" : "Show Metrics"}
+            >
+              {showMetricsPanel ? (
+                <ChevronUp className="w-4 h-4" />
+              ) : (
+                <ChevronDown className="w-4 h-4" />
+              )}
+            </button>
+          )}
+
+          <AnimatePresence>
+            {cameraEnabled && cameraLoading && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="flex items-center gap-2 px-3 py-2 bg-background/80 border border-border/50 rounded-xl text-xs text-muted-foreground"
+              >
+                <div className="w-3 h-3 border-2 border-primary/30 border-t-primary rounded-full animate-spin" />
+                Detecting your face...
+              </motion.div>
+            )}
+            {cameraEnabled && cameraActive && currentMetrics && showMetricsPanel && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                transition={{ duration: 0.2 }}
+              >
+                <CameraFeedback metrics={currentMetrics} expanded={true} />
+              </motion.div>
+            )}
+            {cameraEnabled && cameraError && (
+              <motion.div
+                initial={{ opacity: 0, scale: 0.9, y: -10 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.9, y: -10 }}
+                transition={{ duration: 0.2 }}
+                className="max-w-[200px] p-3 bg-red-500/10 border border-red-500/30 rounded-xl text-xs text-red-400"
+              >
+                {cameraError}
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+
+        <div className="max-w-3xl mx-auto p-4 md:p-8 pt-14 md:pt-16 pr-4 md:pr-16">
+          {teachingLoading ? (
+            <div className="flex items-center justify-center h-96">
+              <div className="text-center">
+                <Loader2 className="w-12 h-12 animate-spin text-primary mx-auto mb-4" />
+                <p className="text-foreground text-lg font-medium">Generating your personalized lesson...</p>
+                <p className="text-muted-foreground text-sm mt-2">This may take a few moments</p>
+              </div>
+            </div>
+          ) : error ? (
+            <div className="flex items-center justify-center h-96">
+              <div className="text-center max-w-md">
+                <p className="text-foreground text-lg font-medium mb-2">Failed to load teaching content</p>
+                <p className="text-muted-foreground text-sm mb-4">{error.message}</p>
+                <div className="flex gap-3 justify-center">
+                  <button
+                    onClick={() => window.location.reload()}
+                    className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
+                  >
+                    Retry
+                  </button>
+                  <button
+                    onClick={handleBack}
+                    className="px-4 py-2 rounded-lg border border-border text-foreground text-sm font-medium hover:bg-accent transition-colors"
+                  >
+                    Back to Curriculum
+                  </button>
+                </div>
+              </div>
+            </div>
+          ) : (
+            <motion.div
+              key={currentSubtopicId}
+              initial={{ opacity: 0, x: 20 }}
+              animate={{ opacity: 1, x: 0 }}
+              exit={{ opacity: 0, x: -20 }}
+            >
+              <TeachingCanvas
+                blocks={teachingData?.blocks || []}
+                subtopicId={currentSubtopicId}
+                onNext={handleNext}
+                onPrevious={handlePrevious}
+                hasNext={!!nextSubtopic}
+                hasPrevious={!!previousSubtopic}
+                onNextLesson={nextSubtopic ? () => handleSelectSubtopic(nextSubtopic.id) : undefined}
+                onPreviousLesson={previousSubtopic ? () => handleSelectSubtopic(previousSubtopic.id) : undefined}
+              />
+            </motion.div>
+          )}
+        </div>
+      </main>
+
+
+      {/* Right Sidebar - Progress (Toggleable) */}
+      <ProgressIndicator
+        streak={streak}
+        lessonsCompleted={lessonsCompleted}
+        totalLessons={totalLessons}
+        practiceScore={avgPracticeScore}
+        estimatedTimeLeft={estimatedTimeLeft}
+        nextMilestone={nextMilestoneTitle}
+        isOpen={progressPanelOpen}
+        onToggle={() => setProgressPanelOpen(!progressPanelOpen)}
+      />
+    </div>
+  );
+}
