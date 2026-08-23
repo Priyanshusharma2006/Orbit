@@ -45,6 +45,7 @@ router.get('/curriculum', async (req, res) => {
     
     res.json({
       ...curriculum.toObject(),
+      curriculum_id: curriculum.id,
       modules: allModules
     });
   } catch (error) {
