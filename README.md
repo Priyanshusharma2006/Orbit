@@ -48,6 +48,8 @@ For the full story behind Orbit, including our inspiration, challenges, and futu
 ### Prerequisites
 *   Node.js (v18+)
 *   MongoDB Instance (Local or Atlas)
+*   A Clerk account (for authentication)
+*   A Google Gemini API Key
 
 ### Installation
 
@@ -57,21 +59,33 @@ For the full story behind Orbit, including our inspiration, challenges, and futu
     cd Orbit
     ```
 
-2.  **Setup Backend**
+2.  **Environment Setup**
+    *   **Frontend**: Create a `.env` file in the `frontend/` directory with your Clerk publishable key.
+        ```env
+        VITE_CLERK_PUBLISHABLE_KEY=pk_test_...
+        ```
+    *   **Backend**: Create a `.env` file in the `backend/` directory with your MongoDB connection string and Gemini API key. *(Note: If using local MongoDB, use `127.0.0.1` instead of `localhost` to avoid Node.js IPv6 resolution timeouts).*
+        ```env
+        MONGODB_URI=mongodb://127.0.0.1:27017/orbit
+        GEMINI_API_KEY=your_gemini_key_here
+        ```
+
+3.  **Setup Backend**
     ```sh
     cd backend
     npm install
+    npm run dev
     ```
+    *The backend server will run on `http://localhost:8000`.*
 
-3.  **Setup Frontend**
+4.  **Setup Frontend**
+    Open a new terminal window:
     ```sh
     cd frontend
     npm install
+    npm run dev
     ```
-
-4.  **Run Development Servers**
-    *   Backend: `cd backend && npm run dev`
-    *   Frontend: `cd frontend && npm run dev`
+    *The frontend will run on `http://localhost:8080` (or whichever port Vite assigns).*
 
 ---
 
