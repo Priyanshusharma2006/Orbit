@@ -31,7 +31,7 @@ export const api = {
     },
 
     askAI: async (message: string, context: string) => {
-        const res = await fetch(`${API_BASE}/api/chat`, {
+        const res = await fetch(`${API_BASE}/api/chat/send`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ message, context }),
