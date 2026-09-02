@@ -346,6 +346,7 @@ export function TeachingCanvas({
   }, [isOn, handleCommand, setCommandHandler]);
 
   const renderMarkdown = (content: string) => {
+    if (!content) return null;
     const parts = content.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, i) => {
       if (part.startsWith('**') && part.endsWith('**')) {

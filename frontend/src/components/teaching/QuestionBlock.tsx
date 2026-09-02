@@ -6,6 +6,7 @@ import type { QuestionBlock as QuestionType } from '@/types/teaching';
 
 
 const renderMarkdownContent = (content: string) => {
+    if (!content) return null;
     const parts = content.split(/(\*\*.*?\*\*)/g);
     return parts.map((part, index) => {
         if (part.startsWith('**') && part.endsWith('**')) {

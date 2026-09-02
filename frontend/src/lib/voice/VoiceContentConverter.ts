@@ -61,6 +61,7 @@ export class VoiceContentConverter {
     }
 
     private cleanMarkdown(content: string): string {
+        if (!content) return '';
         return content
             .replace(/\*\*(.*?)\*\*/g, '$1')
             .replace(/\*(.*?)\*/g, '$1')
