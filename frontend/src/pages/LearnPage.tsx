@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate, useParams, useSearchParams } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Loader2, Video, VideoOff, Menu, X, ChevronDown, ChevronUp } from 'lucide-react';
@@ -202,6 +202,16 @@ export default function LearnPage() {
 
   const nextMilestoneTitle = allSubtopics.find((s: Subtopic) => s.status !== 'completed')?.title || "All Complete!";
 
+  const validBlocks = useMemo(() => {
+    return (teachingData?.blocks || []).filter((b: any) => {
+      if (b.type === 'question') {
+        if (!b.question) return false;
+        if (b.questionType === 'mcq' && (!b.options || b.options.length === 0)) return false;
+      }
+      return true;
+    });
+  }, [teachingData?.blocks]);
+
   if (curriculumLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
@@ -375,7 +385,7 @@ export default function LearnPage() {
               exit={{ opacity: 0, x: -20 }}
             >
               <TeachingCanvas
-                blocks={teachingData?.blocks || []}
+                blocks={validBlocks}
                 subtopicId={currentSubtopicId}
                 onNext={handleNext}
                 onPrevious={handlePrevious}
