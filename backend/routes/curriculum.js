@@ -35,14 +35,20 @@ router.get('/curriculum', async (req, res) => {
     
     const modules = await Module.find({ curriculum_id: curriculum.id }).sort({ position: 1 });
     
-    // Group subtopics by module
     const allModules = await Promise.all(modules.map(async (mod) => {
       const subtopics = await Subtopic.find({ module_id: mod.id }).sort({ position: 1 });
+      
+      const mappedSubtopics = subtopics.map(sub => {
+        const obj = sub.toObject();
+        if (!obj.status) obj.status = obj.score > 0 ? 'completed' : 'not_started';
+        return obj;
+      });
+
       return {
         id: mod.id,
         title: mod.title,
         position: mod.position,
-        subtopics: subtopics
+        subtopics: mappedSubtopics
       };
     }));
     

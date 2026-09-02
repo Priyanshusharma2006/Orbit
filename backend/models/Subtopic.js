@@ -6,6 +6,7 @@ const subtopicSchema = new mongoose.Schema({
   title: { type: String, required: true },
   content: { type: String, required: true },
   score: { type: Number, default: 0 },
+  status: { type: String, default: 'not_started' },
   position: { type: Number, required: true },
   created_at: { type: Date, default: Date.now }
 });
